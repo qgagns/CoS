@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>프로젝트 H.E.R.O</title>
+    <style>
+        :root {
+            /* [신단수 비취 & 묵연 폐허 테마] */
+            --bg-color: #06080b;
+            --app-bg: #0d1117;
+            --panel-bg: #151b23;
+            --border-color: #212836;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-jade: #06b6d4;      /* 신단수 비취빛 */
+            --accent-gold: #f59e0b;      /* 고문서 금박 */
+            --accent-vermilion: #f43f5e; /* 단청 주홍빛 */
+            --accent-blue: var(--accent-jade);
+            --accent-red: var(--accent-vermilion);
+            --accent-green: #10b981;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 0. 타이틀 화면 오버레이 */
+        .title-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0d1117;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 48px 24px 24px;
+            transition: opacity 0.4s ease, visibility 0.4s;
+            text-align: center;
+        }
+        .title-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .title-badge {
+            font-size: 0.65rem;
+            color: var(--accent-jade);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .title-heading {
+            margin-top: 8px;
+            font-size: 1.9rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 40%, var(--accent-jade));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .title-sub {
+            font-size: 0.8rem;
+            color: var(--accent-gold);
+            margin-top: 4px;
+        }
+        /* 중앙 텍스트 메뉴 */
+        .title-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            align-items: center;
+        }
+        .menu-item {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+        }
+        .menu-item:hover, .menu-item:active {
+            color: var(--accent-jade);
+            transform: scale(1.05);
+            text-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+        }
+        .menu-item.disabled {
+            color: var(--text-muted);
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            text-shadow: none !important;
+        }
+
+        /* 최하단 저작권 풋터 */
+        .title-footer {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+            line-height: 1.5;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            background-color: var(--app-bg);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            position: relative; /* 타이틀 오버레이의 기준점 */
+        }
+
+        /* 1. 상단 상태바 */
+        .status-header {
+            padding: 12px 16px;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+        .bar-wrap { background: var(--bg-color); border: 1px solid var(--border-color); height: 10px; border-radius: 5px; overflow: hidden; margin-top: 3px; }
+        .bar-fill { height: 100%; transition: width 0.3s, background-color 0.3s; }
+        .bar-stability { background-color: var(--accent-jade); width: 100%; }
+
+        /* 2. 단서창 */
+        .clue-panel {
+            background: rgba(245, 158, 11, 0.04);
+            border-bottom: 1px dashed rgba(245, 158, 11, 0.25);
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 3. 중앙 스토리 화면 */
+        .story-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .story-log {
+            animation: fadeIn 0.3s ease-out;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 10px;
+        }
+        .story-clue {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid var(--accent-gold);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #fef08a;
+        }
+        /* 시스템 이벤트/영입 알림 배너 */
+        .system-notice {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--accent-jade);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            animation: fadeIn 0.3s ease-out;
+        }
+        /* 4. 상단 통합 파티 스탯바 */
+        .party-stat-bar {
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+        .stat-group { display: flex; gap: 8px; }
+        .stat-item { color: var(--text-muted); }
+        .stat-item strong { color: var(--text-main); margin-left: 2px; }
+        .btn-deck-open {
+            background: var(--app-bg);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            color: var(--accent-jade);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-deck-open:active { background: rgba(6, 182, 212, 0.15); border-color: var(--accent-jade); }
+
+        /* 5. 부대 편성 모달 */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-window {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 380px;
+            padding: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s ease-out;
+        }
+        /* 기록 열람 모달 전용 높이 및 스크롤 */
+        .history-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 4px;
+        }
+        .history-entry {
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* 타자기 깜빡이는 커서 */
+        .typing-cursor {
+            display: inline-block;
+            width: 7px;
+            height: 14px;
+            background: var(--accent-jade);
+            margin-left: 3px;
+            vertical-align: middle;
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        /* 모달 상단 주인공 스탯 배너 */
+        .modal-player-bar {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-bottom: 10px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .companion-deck {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .slot-card {
+            background: var(--app-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 3px;
+            text-align: center;
+            height: 64px; /* 💡 6칸 크기 완전 고정 */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .slot-card:hover { border-color: rgba(6, 182, 212, 0.4); }
+        .slot-card.selected { border-color: var(--accent-jade); background: rgba(6, 182, 212, 0.15); box-shadow: 0 0 8px rgba(6, 182, 212, 0.3); }
+        .slot-card.stage-2 { border-color: #818cf8; }
+        .slot-card.stage-3 { border-color: var(--accent-gold); box-shadow: 0 0 6px rgba(245,158,11,0.3); }
+
+        /* 모달 하단 대기 동료 선택 패널 */
+        .roster-picker {
+            margin-top: 10px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        /* 2행 동료 카드 버튼 */
+        .roster-card-btn {
+            background: #182230;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 7px 10px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .roster-card-btn:active { background: #223044; border-color: var(--accent-jade); }
+        .roster-card-btn.active-slot { border-color: var(--accent-jade); background: rgba(6, 182, 212, 0.1); }
+
+        .slot-pos-tag { font-size: 0.62rem; font-weight: bold; }
+        /* 💡 이름이 길면 자연스럽게 줄바꿈 */
+        .slot-name { font-size: 0.68rem; font-weight: bold; word-break: keep-all; line-height: 1.25; }
+
+        /* 3. 본문 내 인라인 선택지 그룹 */
+        .inline-choice-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .btn-choice {
+            background: #161e29;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .btn-choice:active { transform: scale(0.98); background: #1c2736; border-color: var(--accent-jade); }
+        .btn-choice.special {
+            border-color: var(--accent-jade);
+            background: rgba(6, 182, 212, 0.12);
+            color: #e0f2fe;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+    <!-- 0. 타이틀 화면 -->
+    <div class="title-screen" id="title-screen">
+        <div>
+            <div class="title-badge">2060 Reconstruction Protocol</div>
+            <div class="title-heading">Project H.E.R.O</div>
+            <div class="title-sub">신단수의 아이들</div>
+        </div>
+        <!-- 중앙 미니멀 텍스트 메뉴 -->
+        <div class="title-menu">
+            <button class="menu-item" onclick="startGame()">여정을 시작하기</button>
+            <button class="menu-item disabled" onclick="alert('다음 업데이트에서 해금됩니다.')">과거의 편린</button>
+            <button class="menu-item disabled" onclick="alert('다음 업데이트에서 해금됩니다.')">환경설정</button>
+         </div>
+
+        <!-- 최하단 저작권 및 버전 -->
+        <div class="title-footer">
+            v0.2.0-alpha · Project H.E.R.O<br>
+            © 2060 Children of Sindansu. All rights reserved.
+        </div>
+    </div>
+    <div class="status-header">
+        <!-- 단일 생체 안정도 게이지 -->
+        <div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                <span>🧬 생체 안정도</span><span id="ui-stability">100%</span>
+            </div>
+            <div class="bar-wrap">
+                <div class="bar-fill bar-stability" id="bar-stability"></div>
+            </div>
+        </div>
+        <div style="grid-column: 1 / -1; display:flex; justify-content:space-between; margin-top:2px; font-size:0.75rem; color:var(--text-muted);">
+            <span>자금: <strong id="ui-gold" style="color:#fff;">50</strong>원</span>
+            <span>진행: <strong id="ui-turn" style="color:var(--accent-jade);">1</strong>턴</span>
+        </div>
+    </div>
+
+    <!-- 상단 4대 파티 스탯바 및 편성 버튼 추가 -->
+    <div class="party-stat-bar">
+        <div class="stat-group">
+            <span class="stat-item">전략🚩<strong id="stat-str">0</strong></span>
+            <span class="stat-item">무력⚔️<strong id="stat-war">0</strong></span>
+            <span class="stat-item">지성🔧<strong id="stat-int">0</strong></span>
+            <span class="stat-item">행정📜<strong id="stat-adm">0</strong></span>
+        </div>
+        <button class="btn-deck-open" onclick="toggleFormationModal(true)">👥 진형 편성</button>
+    </div>
+
+    <div class="clue-panel">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span>📜 기억의 단서</span>
+            <strong id="ui-clue-count" style="color:var(--text-main);">0 / 5개</strong>
+        </div>
+        <button class="btn-deck-open" onclick="toggleHistoryModal(true)">📖 지난 기록</button>
+    </div>
+
+    <div class="story-container" id="story-box"></div>
+</div>
+<!-- 팝업 모달 추가 (mobile-container 바깥, script 태그 바로 위) -->
+<div class="modal-backdrop" id="formation-modal" onclick="if(event.target===this) toggleFormationModal(false)">
+    <div class="modal-window">
+        <div class="modal-header">
+            <span>🛡️ 동료 전술 진형 편성 (6칸 자유 배치)</span>
+            <button class="modal-close" onclick="toggleFormationModal(false)">✕</button>
+        </div>
+
+        <!-- 1. 주인공 현재 스탯 배너 -->
+        <div class="modal-player-bar" id="modal-player-bar">
+            <!-- 자바스크립트로 현재 스탯이 실시간 렌더링됩니다 -->
+        </div>
+        
+        <!-- 2. 진형 6칸 슬롯 (배율 아이콘화) -->
+        <div class="companion-deck">
+            <!-- 1행 (후열上, 중열上, 전열上) -->
+            <div class="slot-card" id="slot-0">
+                <div class="slot-pos-tag" style="color:var(--accent-green);">후열 [🔧📜×1.5]</div>
+                <div class="slot-name" id="slot-name-0">(공석)</div>
+            </div>
+            <div class="slot-card" id="slot-2">
+                <div class="slot-pos-tag" style="color:var(--accent-blue);">중열 [🚩×1.5]</div>
+                <div class="slot-name" id="slot-name-2">(공석)</div>
+            </div>
+            <div class="slot-card" id="slot-4">
+                <div class="slot-pos-tag" style="color:var(--accent-red);">전열 [⚔️×1.5]</div>
+                <div class="slot-name" id="slot-name-4">(공석)</div>
+            </div>
+
+            <!-- 2행 (후열下, 중열下, 전열下) -->
+            <div class="slot-card" id="slot-1">
+                <div class="slot-pos-tag" style="color:var(--accent-green);">후열 [🔧📜×1.5]</div>
+                <div class="slot-name" id="slot-name-1">(공석)</div>
+            </div>
+            <div class="slot-card" id="slot-3">
+                <div class="slot-pos-tag" style="color:var(--accent-blue);">중열 [🚩×1.5]</div>
+                <div class="slot-name" id="slot-name-3">(공석)</div>
+            </div>
+            <div class="slot-card" id="slot-5">
+                <div class="slot-pos-tag" style="color:var(--accent-red);">전열 [⚔️×1.5]</div>
+                <div class="slot-name" id="slot-name-5">(공석)</div>
+            </div>
+        </div>
+
+        <!-- 3. 상시 노출 동료 목록 및 조작 패널 -->
+        <div class="roster-picker" id="roster-picker"></div>
+    </div>
+</div>
+
+    <!-- 6. 지난 기록(로그) 열람 모달 -->
+<div class="modal-backdrop" id="history-modal" onclick="if(event.target===this) toggleHistoryModal(false)">
+    <div class="modal-window">
+        <div class="modal-header">
+            <span>📖 지금까지의 여정 기록</span>
+            <button class="modal-close" onclick="toggleHistoryModal(false)">✕</button>
+        </div>
+        <div class="history-content" id="history-content">
+            <!-- 지나온 텍스트 로그들이 누적 렌더링됩니다 -->
+        </div>
+    </div>
+</div>
+
+<!-- 분리된 자바스크립트 파일들을 순서대로 불러옵니다 -->
+<script src="characters.js"></script>
+<script src="events.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
